@@ -1,0 +1,4 @@
+.ivy2/
+release/
+target/
+*.class
