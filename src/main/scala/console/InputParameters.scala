@@ -11,14 +11,44 @@
 
 package console
 
+import console.Application.RunContext
+
 trait InputParameters[C] {
   def initialState: C
+  def definition: InputDefinition
 
   def arg[T: InputArgumentReader: ValueReader](name: String, default: T): InputArgument[T, C] =
     new InputArgument[T, C](name, default)
 
   def opt[T: InputOptionReader: ValueReader](name: String, default: T): InputOption[T, C] =
     new InputOption[T, C](name, default)
+
+  final private[console] def mapInputToConfig(runContext: RunContext, input: List[ParsedInputParameter]): C = {
+    val parsedArguments = input.collect { case arg: ParsedInputArgument => arg }
+    val parsedOptions = input.collect { case opt: ParsedInputOption => opt }
+
+    case class MapContext(runContext: RunContext, config: C)
+
+    val context: MapContext = definition.parameters
+      .foldLeft(MapContext(runContext, initialState))((acc, param) => {
+        param match {
+          case a: InputArgument[_, C] =>
+            val context = acc.runContext.copy(argumentIndex = acc.runContext.argumentIndex + 1)
+            val config = a.callAction(acc.config, parsedArguments.lift(acc.runContext.argumentIndex))
+            MapContext(context, config)
+          case o: InputOption[_, C] =>
+            val config = o.callAction(acc.config, parsedOptions.find(_.name == o.name))
+            MapContext(acc.runContext, config)
+          case _ =>
+            // Something went really wrong...
+            // Could use the context object to keep track of issues like this without halting
+            // execution instantly or impure functions
+            acc
+        }
+      })
+
+    context.config
+  }
 }
 
 trait InputParameter[T, C, P] {

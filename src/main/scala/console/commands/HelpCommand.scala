@@ -11,16 +11,13 @@
 
 package console.commands
 
-import console.{Application, InputDefinition}
+import console.{Application, ApplicationConfig, InputDefinition}
 
 class HelpCommand(application: Application) extends Command[HelpConfig] {
   override val initialState = HelpConfig()
   override val name = "help"
-
-  override def parameters(): InputDefinition = {
-    new InputDefinition()
-      .withParameter(opt[Boolean]("full", false).withAction((config, value) => config.copy(full = value)))
-  }
+  override val definition = new InputDefinition()
+    .withParameter(opt[Boolean]("full", false).withAction((config, value) => config.copy(full = value)))
 
   override def execute(input: HelpConfig): Unit = {
     println(input)
@@ -30,5 +27,6 @@ class HelpCommand(application: Application) extends Command[HelpConfig] {
 case class HelpConfig(full: Boolean = false)
 
 class HelpCommandBuilder extends CommandBuilder[HelpCommand] {
-  def build(application: Application): HelpCommand = new HelpCommand(application)
+  def build(application: Application, appInput: ApplicationConfig): HelpCommand =
+    new HelpCommand(application)
 }

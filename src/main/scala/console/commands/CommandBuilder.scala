@@ -11,8 +11,8 @@
 
 package console.commands
 
-import console.Application
+import console._
 
 trait CommandBuilder[C <: Command[_]] {
-  def build(application: Application): C
+  def build(application: Application, appInput: ApplicationConfig): C
 }

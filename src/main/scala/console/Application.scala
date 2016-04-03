@@ -15,19 +15,18 @@ import console.commands.{Command, CommandBuilder}
 
 case class Application(
     commandBuilders: List[CommandBuilder[_ <: Command[_]]])
-  extends InputParameters[AppConfig] {
+  extends InputParameters[ApplicationConfig] {
 
-  override val initialState = AppConfig()
+  override val initialState = ApplicationConfig()
 
   val initialContext = Application.RunContext(1)
-
-  private val definition = new InputDefinition()
+  val definition = new InputDefinition()
     .withParameter(arg[String]("command", "").withAction((config, value) => config.copy(command = value)))
     .withParameter(opt[Boolean]("help", false).withAction((config, value) => config.copy(help = value)))
     .withParameter(opt[Int]("verbosity", 1).withAction((config, value) => config.copy(verbosity = value)))
 
   def run(input: Array[String]): Unit = {
-    val commands = commandBuilders.map(_.build(this))
+    val commands = commandBuilders.map(_.build(this, initialContext))
     val parser = new Parser()
     val parsed = parser.parse(input)
     val command = findCommand(commands, parsed)
@@ -48,7 +47,7 @@ case class Application(
   }
 }
 
-case class AppConfig(command: String = "", help: Boolean = false, verbosity: Int = 1)
+case class ApplicationConfig(command: String = "", help: Boolean = false, verbosity: Int = 1)
 
 object Application {
   case class RunContext(argumentIndex: Int)
